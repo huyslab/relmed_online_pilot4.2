@@ -1,6 +1,6 @@
 // Function setting up PILT blocks
 window.maxWarnings = 10;
-window.defaultMaxRespTime = 3000;
+window.defaul_response_deadline = 3000;
 window.pilt_test_confidence_every = 4;
 
 window.skipThisBlock = false;
@@ -80,13 +80,13 @@ const test_trial = {
             </style>
             <div id="optionBox" class="optionBox">
                 <div id='left' class="optionSide">
-                    <img id='leftImg' src=imgs/${jsPsych.evaluateTimelineVariable('stimulus_left')}></img> 
+                    <img id='leftImg' src=imgs/PILT_stims/${jsPsych.evaluateTimelineVariable('stimulus_left')}></img> 
                 </div>
                 <div class="helperTxt">
-                    <h2 id="centerTxt">?</h2>
+                    <p2 id="centerTxt">?</p2>
                 </div>
                 <div id='right' class="optionSide">
-                    <img id='rightImg' src=imgs/${jsPsych.evaluateTimelineVariable('stimulus_right')}></img>
+                    <img id='rightImg' src=imgs/PILT_stims/${jsPsych.evaluateTimelineVariable('stimulus_right')}></img>
                 </div>
             </div>`
         },
@@ -169,13 +169,13 @@ const test_trial = {
                     </style>
                     <div id="optionBox" class="optionBox">
                         <div id='left' class="optionSide">
-                            <img id='leftImg' src=imgs/${jsPsych.evaluateTimelineVariable('stimulus_left')}></img> 
+                            <img id='leftImg' src=imgs/PILT_stims/${jsPsych.evaluateTimelineVariable('stimulus_left')}></img> 
                         </div>
                         <div class="helperTxt">
-                            <h2 id="centerTxt">Please respond more quickly!</h2>
+                            <p id="centerTxt">Please respond more quickly!</p>
                         </div>
                         <div id='right' class="optionSide">
-                            <img id='rightImg' src=imgs/${jsPsych.evaluateTimelineVariable('stimulus_right')}></img>
+                            <img id='rightImg' src=imgs/PILT_stims/${jsPsych.evaluateTimelineVariable('stimulus_right')}></img>
                         </div>
                     </div>`
                 },
@@ -247,7 +247,7 @@ function build_post_PILT_test(structure){
             type: jsPsychPreload,
             images: structure[1]
                 .flatMap(item => [item.stimulus_right, item.stimulus_left])
-                .map(value => `imgs/${value}`),
+                .map(value => `imgs/PILT_stims/${value}`),
             post_trial_gap: 800
         }
     ];
@@ -267,46 +267,39 @@ function build_post_PILT_test(structure){
     return test
 }
 
-// Post-PILT test instructions
-const test_instructions = {
-    type: jsPsychInstructions,
-    css_classes: ['instructions'],
-    pages: [
-        '<p>You will now continue to another round of the card choosing game.</p>\
-            <p>The game proceeds the same as before, except you won\'t be able to see the coins you discover and collect.</p>\
-            <p>You will be presented with cards you already know. Do you best to choose the best card possible on each turn.</p>'
-    ],
-    show_clickable_nav: true,
-    data: {trialphase: "post-PILT_test_instructions"}
-}
 
 // PILT trial
-const PLT_trial =  {
+const PILT_trial =  {
     timeline: [
         kick_out,
         fullscreen_prompt,
     {
-        type: jsPsychPLT,
-        imgLeft: () => 'imgs/'+ jsPsych.evaluateTimelineVariable('stimulus_left'),
-        imgRight: () => 'imgs/'+ jsPsych.evaluateTimelineVariable('stimulus_right'),
-        outcomeLeft: jsPsych.timelineVariable('feedback_left'),
-        outcomeRight: jsPsych.timelineVariable('feedback_right'),
-        optimalRight: jsPsych.timelineVariable('optimal_right'),
-        maxRespTime: jsPsych.timelineVariable('maxRespTime'),
+        type: jsPsychPILT,
+        stimulus_right: () => 'imgs/PILT_stims/'+ jsPsych.evaluateTimelineVariable('stimulus_right'),
+        stimulus_left: () => 'imgs/PILT_stims/'+ jsPsych.evaluateTimelineVariable('stimulus_left'),
+        stimulus_middle: () => 'imgs/PILT_stims/'+ jsPsych.evaluateTimelineVariable('stimulus_middle'),
+        feedback_left: jsPsych.timelineVariable('feedback_left'),
+        feedback_right: jsPsych.timelineVariable('feedback_right'),
+        feedback_middle: jsPsych.timelineVariable('feedback_middle'),
+        optimal_right: jsPsych.timelineVariable('optimal_right'),
+        optimal_side: jsPsych.timelineVariable('optimal_side'),
+        response_deadline: jsPsych.timelineVariable('response_deadline'),
+        n_stimuli: jsPsych.timelineVariable('n_stimuli'),
+        present_pavlovian: jsPsych.timelineVariable('present_pavlovian'),
         data: {
             trialphase: "task",
             block: jsPsych.timelineVariable('block'),
             trial: jsPsych.timelineVariable('trial'),
-            stimulus_pair: jsPsych.timelineVariable('pair'),
-            stimulus_pair_id: jsPsych.timelineVariable('cpair'),
+            stimulus_group: jsPsych.timelineVariable('stimulus_group'),
+            stimulus_group_id: jsPsych.timelineVariable('stimulus_group_id'),
             valence: jsPsych.timelineVariable('valence'),
-            n_pairs: jsPsych.timelineVariable('n_pairs'),
+            n_groups: jsPsych.timelineVariable('n_groups'),
             rest_1pound: jsPsych.timelineVariable('rest_1pound'),
             rest_50pence: jsPsych.timelineVariable('rest_50pence'),
             rest_1penny: jsPsych.timelineVariable('rest_1penny')
         },
         on_finish: function(data) {
-            if (data.choice === "noresp") {
+            if (data.response === "noresp") {
                 var up_to_now = parseInt(jsPsych.data.get().last(1).select('n_warnings').values);
                 jsPsych.data.addProperties({
                     n_warnings: up_to_now + 1
@@ -331,24 +324,24 @@ const PLT_trial =  {
 
                 // Find all sitmulus-pairs in block
                 let unique_stimulus_pairs =  [...new Set(jsPsych.data.get().filter({
-                    trial_type: "PLT",
+                    trial_type: "PILT",
                     block: block
-                }).select('stimulus_pair').values)]
+                }).select('stimulus_group').values)]
 
                 // Initialize a variable to store the result
                 let all_optimal = true;
 
-                // Iterate over each unique stimulus_pair and check the last 5 choices
-                unique_stimulus_pairs.forEach(pair => {
+                // Iterate over each unique stimulus_group and check the last 5 choices
+                unique_stimulus_pairs.forEach(g => {
 
-                    // Filter data for the current stimulus_pair
+                    // Filter data for the current stimulus_group
                     let num_optimal = jsPsych.data.get().filter({
-                        trial_type: "PLT",
+                        trial_type: "PILT",
                         block: block,
-                        stimulus_pair: pair
-                    }).last(5).select('isOptimal').sum();
+                        stimulus_group: g
+                    }).last(5).select('response_optimal').sum();
 
-                    // Check if all last 5 choices for this pair are correct
+                    // Check if all last 5 choices for this group are correct
                     if (num_optimal < 5) {
                         all_optimal = false;
                     }
@@ -399,20 +392,20 @@ const coin_lottery = {
 }
 
 // Build PILT task block
-function build_PLT_task(structure, insert_msg = true){
-    let PLT_task = [];
+function build_PILT_task(structure, insert_msg = true){
+    let PILT_task = [];
     for (let i=0; i < structure.length; i++){
 
-        // Set default value of maxRespTime
+        // Set default value of response_deadline
         structure[i].forEach(trial => {
-            if (!trial.hasOwnProperty('maxRespTime')) {
-                trial.maxRespTime = window.defaultMaxRespTime; // Add the default value if missing
+            if (!trial.hasOwnProperty('response_deadline')) {
+                trial.response_deadline = window.default_response_deadline; // Add the default value if missing
             }
         });
 
         // Get list of unique images in block to preload
         let preload_images = structure[i].flatMap(item => [item.stimulus_right, item.stimulus_left]);
-        preload_images = [...new Set(preload_images)].map(value => `imgs/${value}`);
+        preload_images = [...new Set(preload_images)].map(value => `imgs/PILT_stims/${value}`);
 
         // Build block
         block = [
@@ -423,7 +416,7 @@ function build_PLT_task(structure, insert_msg = true){
             },
             {
                 timeline: [
-                    PLT_trial
+                    PILT_trial
                 ],
                 timeline_variables: structure[i]
             }
@@ -434,17 +427,17 @@ function build_PLT_task(structure, insert_msg = true){
             block.push(inter_block_msg);
         }
         
-        PLT_task = PLT_task.concat(block)
+        PILT_task = PILT_task.concat(block)
     }
 
-    return PLT_task
+    return PILT_task
 }
 
 // Load PILT sequences from json file
 async function load_squences(session) {
     try {
         // Fetch PILT sequences
-        const response = await fetch('pilot4_pilt.json');
+        const response = await fetch('pilot6_PILT.json');
         
         if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -455,49 +448,60 @@ async function load_squences(session) {
         window.totalBlockNumber = sess_structure.length
 
         // Fetch post-PILT test sequences
-        const test_response = await fetch('pilot4_pilt_test.json');
+        const test_response = await fetch('pilot6_pilt_test.json');
 
         if (!test_response.ok) {
             throw new Error('Network response was not ok');
         }
 
         const test_structure = await test_response.json();
-        const test_sess_structure = test_structure[session - 1];
+        let test_sess_structure = test_structure[session - 1];
 
         // Fetch pavlovian test sequences
         const pavlovian_response = await fetch('pavlovian_test.json');
         const pav_test_structure = await pavlovian_response.json();
         
-        // Replace the second array in test_sess_structure with pav_test_structure
-        if (test_sess_structure.length > 1) {
-            test_sess_structure[1] = pav_test_structure;
-        }
+        // Add Pavlovaian test to the end of test strucutre
+        test_sess_structure = test_sess_structure.concat(pav_test_structure);
 
-        run_full_experiment(sess_structure, test_sess_structure);
+        // Fetch WM structure
+        const WM_response = await fetch('pilot6_WM.json');
+        const WM_structure = await WM_response.json();
+        const WM_sess_structure = WM_structure[session - 1];
+
+        run_full_experiment(sess_structure, test_sess_structure, WM_sess_structure);
     } catch (error) {
         console.error('There was a problem with the fetch operation:', error);
     }
 }
 
-function return_PILT_full_sequence(structure, test_structure){
+function return_PILT_full_sequence(structure, test_structure, WM_structure){
     // Compute best-rest
     computeBestRest(structure);
+    computeBestRest(WM_structure);
 
     let PILT_procedure = [];
 
     // Add instructions
-    PILT_procedure = PILT_procedure.concat(prepare_PILT_instructions());
+    // PILT_procedure = PILT_procedure.concat(prepare_PILT_instructions());
 
-    // Add PLT
-    PILT_procedure = PILT_procedure.concat(build_PLT_task(structure));
+    // Add PILT
+    PILT_procedure = PILT_procedure.concat(build_PILT_task(structure));
 
     // Add test
     let PILT_test_procedure = [];
     PILT_test_procedure.push(test_instructions);
     PILT_test_procedure = PILT_test_procedure.concat(build_post_PILT_test(test_structure));
 
+    // WM block
+    let WM_procedure = WM_instructions;
+
+    WM_procedure = WM_procedure.concat(build_PILT_task(WM_structure));
+
+
     return {
         PILT_procedure: PILT_procedure,
-        PILT_test_procedure: PILT_test_procedure
+        PILT_test_procedure: PILT_test_procedure,
+        WM_procedure: WM_procedure
     }
 }

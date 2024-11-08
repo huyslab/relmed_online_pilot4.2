@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PLT</title>
+    <title>Coin and card games</title>
     <script src="jspsych/jspsych.js"></script>
     <script>
         // Initialize jsPysch object
@@ -21,9 +21,9 @@
     <script src="jspsych/plugin-survey-text.js"></script>
     <script src="jspsych/plugin-fullscreen.js"></script>
     <script src="utils.js"></script>
-    <script src="plugin-PLT.js"></script>
+    <script src="plugin-PILT.js"></script>
+    <script src="pilot6_reversal_sequence.js"></script>
     <script src="plugin-reversal.js"></script>
-    <script src="pilot4_reversal_sequence.js"></script>
     <script src="reversal.js"></script>
     <script src="plugin-coin-lottery.js"></script>
     <script src="PILT.js"></script>
@@ -36,6 +36,7 @@
     <link href="jspsych/jspsych.css" rel="stylesheet" type="text/css" />
     <link href="vigour_styles.css" rel="stylesheet" type="text/css" />
     <link href="reversal.css" rel="stylesheet" type="text/css" />
+    <link href="PILT.css" rel="stylesheet" type="text/css" />
 </head>
 <style>
     .jsPsychDE {
@@ -75,7 +76,7 @@
         session_id: window.sessionId,
         session: window.sessionNum,
         n_warnings: 0,
-        version: "5.0"
+        version: "6.0"
     })
 
     // Preliminary checks
@@ -112,7 +113,7 @@
                 "50pence.png", "50pencebroken.png",
                 "safe.png",
                 "1p-num.png", "2p-num.png", "5p-num.png", "10p-num.png", "piggy-bank.png", "ooc_2p.png", "piggy-tail2.png", "saturate-icon.png", "tail-icon.png",
-                "marble1.png", "marble2.png", "marble3.png", "marble4.png", "marble5.png", "marble6.png", "occluding_clouds.png"
+                "PIT1.png", "PIT2.png", "PIT3.png", "PIT4.png", "PIT5.png", "PIT6.png", "occluding_clouds.png"
             ].map(s => "imgs/" + s),
             post_trial_gap: 800
         },
@@ -150,32 +151,29 @@
         }
     ]
 
-    function run_full_experiment(PILT_structure, test_structure){
+    function run_full_experiment(PILT_structure, test_structure, WM_procedure){
 
         let procedure = [];
 
-        // 0.0 Preliminary screen checks and load images
+        // Preliminary screen checks and load images
         procedure = procedure.concat(preliminary_checks);
 
-        // 1.0 Add PILT timeline
-        PILT_tasks = return_PILT_full_sequence(PILT_structure, test_structure);
+        // Add PILT timeline
+        PILT_tasks = return_PILT_full_sequence(PILT_structure, test_structure, WM_procedure);
         procedure = procedure.concat(PILT_tasks.PILT_procedure);
 
-        // 1.1 Add coin lottery
+        // Add coin lottery
         procedure.push(lottery_instructions);
         procedure.push(coin_lottery);
 
-        // 2.0 Add vigour task timeline
+        // Add vigour task timeline
         const vigourTimeline = [
             vigourInstructions,
             ...experimentTimeline,
         ];
         procedure = procedure.concat(vigourTimeline);
 
-        // 2.1 Add vigour bonus message
-        procedure.push(vigour_bonus);
-
-        // 3.0 Add PIT timeline: instructions, trials, bonus
+        // Add PIT timeline: instructions, trials, bonus
         const PITtimeline = [
             PITinstructions,
             PITtrials,
@@ -183,18 +181,24 @@
         ];
         procedure = procedure.concat(PITtimeline);
 
-         // 4.0 Add post-vigour test
+        // Add vigour bonus message
+        procedure.push(vigour_bonus);
+
+        // PILT & Pavlovian test
+        procedure = procedure.concat(PILT_tasks.PILT_test_procedure);
+
+         // Add post-vigour test
         procedure = procedure.concat(postVigourInstructions);
         procedure = procedure.concat(postVigourTrials);
 
-        // 5.0 Add reversal timeline
-        // procedure = procedure.concat(reversal_instructions);
-        // procedure = procedure.concat(reversal_blocks);
+        // Add WM block
+        procedure.push(PILT_tasks.WM_procedure);
 
-        // Extra: PILT & Pavlovian test
-        procedure = procedure.concat(PILT_tasks.PILT_test_procedure);
+        // Add reversal timeline
+        procedure = procedure.concat(reversal_instructions);
+        procedure = procedure.concat(reversal_blocks);
 
-        // 6.0 Debrief questions
+        // Debrief questions
         procedure = procedure.concat(acceptability);
 
         // Final messages and data saving
@@ -204,6 +208,12 @@
         if (!debug) {
             // Prevent right-click
             document.addEventListener('contextmenu', event => event.preventDefault());
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I") || (e.metaKey && e.code === "KeyI")) {
+                    e.preventDefault();
+                }
+            });
 
             // Prompt before refresh
             // Prompt before refresh
