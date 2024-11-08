@@ -8,7 +8,12 @@ window.skipThisBlock = false;
 // Message between blocks
 const inter_block_msg = {
     type: jsPsychHtmlKeyboardResponse,
-    choices: ['arrowright', 'arrowleft'],
+    choices: () => {
+
+        const n_stimuli = jsPsych.data.get().filter({trial_type: "PILT"}).last(1).select("n_stimuli").values[0];
+
+        return n_stimuli === 2 ? ['arrowright', 'arrowleft'] : ['arrowright', 'arrowleft', 'arrowup']
+    },
     css_classes: ['instructions'],
     stimulus: inter_block_stimulus,
     data: {
@@ -374,9 +379,9 @@ const coin_lottery = {
 
         let raw_props = computeCategoryProportions(coins_from_data);
 
-        raw_props = [raw_props[0.01], raw_props[0.5], raw_props[1]]
+        raw_props = [raw_props[0.01], raw_props[0.5], raw_props[1], raw_props["-0.01"], raw_props["-0.5"], raw_props["-1"]]
 
-        const prior = [0.1, 0.3, 0.6];
+        const prior = [0.1, 0.3, 0.5, 0.1 / 3, 0.1 / 3, 0.1 / 3];
 
         // Take weighted average
         const weight_data = 0.6;
